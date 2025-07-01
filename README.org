@@ -1,0 +1,41 @@
+# -*- ispell-local-dictionary: "english" -*-
+#+TITLE: kal-mux
+
+=kal-mux= is a Rust tiny library providing a simple ordering stream
+multiplexer.
+
+* Maturity
+
+This code is around ~100 lines of rust, and has 100% test coverage.
+
+However, it is still considered to be in beta stage currently.
+
+* Compatibility
+
+It is small and simple, and has 1 dependency towards ~futures~.
+
+* Features
+
+- support any type of streamed object
+- support of any type of comparision function (allows capturing
+  closure)
+
+* Usage
+
+Given a list of streams outputing ordered content, this ~mux_by~
+will produce a unique stream with ordered content coming from all
+streams.
+
+Ordering is set by providing a ~cmp~ function.
+
+#+begin_src rust
+futures::executor::block_on(async {
+    let s1 = futures::stream::iter([1, 3, 5]);
+    let s2 = futures::stream::iter([2, 4, 6]);
+
+    let merged = kal_mux::mux_by(vec![s1, s2], |a: &i32, b: &i32| a.cmp(b));
+    let out: Vec<_> = futures::StreamExt::collect(merged).await;
+
+    assert_eq!(out, vec![1, 2, 3, 4, 5, 6]);
+});
+#+end_src

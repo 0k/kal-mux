@@ -1,0 +1,10 @@
+[package]
+name = "kal-mux"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures = "0.3.31"
+
+[dev-dependencies]
+tokio = { version = "1.47.1", features = ["macros", "rt"] }
