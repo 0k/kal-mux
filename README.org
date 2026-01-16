@@ -17,12 +17,12 @@ It is small and simple, and has 1 dependency towards ~futures~.
 * Features
 
 - support any type of streamed object
-- support of any type of comparision function (allows capturing
+- support of any type of comparison function (allows capturing
   closure)
 
 * Usage
 
-Given a list of streams outputing ordered content, this ~mux_by~
+Given a list of streams outputting ordered content, this ~mux_by~
 will produce a unique stream with ordered content coming from all
 streams.
 
@@ -39,3 +39,7 @@ futures::executor::block_on(async {
     assert_eq!(out, vec![1, 2, 3, 4, 5, 6]);
 });
 #+end_src
+
+* Changelog
+
+See [[./CHANGELOG.md][CHANGELOG.md]] for the full history of changes.

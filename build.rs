@@ -12,7 +12,9 @@ fn main() {
             in_block = true;
             lang = rest.trim().to_string(); // e.g. "rust"
             out.push_str("```");
-            if !lang.is_empty() { out.push_str(&lang); }
+            if !lang.is_empty() {
+                out.push_str(&lang);
+            }
             out.push('\n');
         } else if line.trim() == "#+end_src" && in_block {
             in_block = false;

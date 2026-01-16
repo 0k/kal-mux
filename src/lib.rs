@@ -1,11 +1,11 @@
 #![doc = include_str!(concat!(env!("OUT_DIR"), "/README.md"))]
 
+use futures::Stream;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use futures::Stream;
 
 pub fn mux_by<S, T, F>(streams: Vec<S>, cmp: F) -> MuxBy<S, T, F>
 where
@@ -54,11 +54,7 @@ where
     }
 }
 
-impl<T, F> Eq for HeapItem<T, F>
-where
-    F: Fn(&T, &T) -> Ordering + Unpin + Sync + 'static,
-{}
-
+impl<T, F> Eq for HeapItem<T, F> where F: Fn(&T, &T) -> Ordering + Unpin + Sync + 'static {}
 
 impl<T, F> PartialOrd for HeapItem<T, F>
 where
@@ -69,9 +65,9 @@ where
     }
 }
 
-
 impl<T, F> Ord for HeapItem<T, F>
-where F: Fn(&T,&T)->Ordering + Unpin + Sync + 'static
+where
+    F: Fn(&T, &T) -> Ordering + Unpin + Sync + 'static,
 {
     fn cmp(&self, other: &Self) -> Ordering {
         (self.cmp)(&self.value, &other.value)
@@ -85,7 +81,6 @@ where
     S: Stream<Item = T> + Unpin,
     F: Fn(&T, &T) -> Ordering + Unpin + Sync + 'static,
     T: Unpin,
-
 {
     type Item = T;
 
@@ -104,10 +99,11 @@ where
                         });
                         this.in_heap[idx] = true;
                     }
-                    Poll::Ready(None) => {  // Stream is exhausted
+                    Poll::Ready(None) => {
+                        // Stream is exhausted
                         this.done[idx] = true;
                     }
-                    Poll::Pending => {}     // Stream is not ready
+                    Poll::Pending => {} // Stream is not ready
                 }
             }
         }
@@ -116,8 +112,12 @@ where
         if alive == 0 {
             return Poll::Ready(None);
         }
-        let heads = this.in_heap.iter().zip(&this.done)
-            .filter(|&(&in_h, &d)| in_h && !d).count();
+        let heads = this
+            .in_heap
+            .iter()
+            .zip(&this.done)
+            .filter(|&(&in_h, &d)| in_h && !d)
+            .count();
         if heads < alive {
             return Poll::Pending;
         }
@@ -125,17 +125,17 @@ where
         debug_assert_eq!(this.heap.len(), heads, "heap/in_heap mismatch");
         if let Some(HeapItem { value, src, .. }) = this.heap.pop() {
             this.in_heap[src] = false;
-            return Poll::Ready(Some(value))
+            Poll::Ready(Some(value))
+        } else {
+            unreachable!("heap empty despite heads == alive > 0")
         }
-        // unreachable
-        return Poll::Pending;
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::{stream, StreamExt};
+    use futures::{StreamExt, stream};
 
     #[tokio::test(flavor = "current_thread")]
     async fn merge_two_streams_ascending() {
@@ -233,7 +233,10 @@ mod tests {
 
         // Make A ready, B empty  → must NOT yield yet (Pending)
         tx_a.unbounded_send(1).unwrap();
-        assert!(matches!(Stream::poll_next(mux.as_mut(), &mut cx), Poll::Pending));
+        assert!(matches!(
+            Stream::poll_next(mux.as_mut(), &mut cx),
+            Poll::Pending
+        ));
 
         // Unlock B with a smaller head (0)  → now it should yield 0
         tx_b.unbounded_send(0).unwrap();
@@ -243,7 +246,10 @@ mod tests {
         }
 
         // After popping 0, B has no head → must block again (Pending)
-        assert!(matches!(Stream::poll_next(mux.as_mut(), &mut cx), Poll::Pending));
+        assert!(matches!(
+            Stream::poll_next(mux.as_mut(), &mut cx),
+            Poll::Pending
+        ));
 
         // Provide B's next head 3 (so A's 1 should come next)
         tx_b.unbounded_send(3).unwrap();
@@ -262,7 +268,7 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn tie_break_prefers_lower_src_index() {
-        use futures::{stream, StreamExt};
+        use futures::{StreamExt, stream};
 
         // Both streams yield equal keys (1), but we tag items with their src.
         // Expectation: lower src (0) should come before higher src (1) on ties.
