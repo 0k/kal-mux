@@ -40,6 +40,3 @@ futures::executor::block_on(async {
 });
 #+end_src
 
-* Changelog
-
-See [[./CHANGELOG.md][CHANGELOG.md]] for the full history of changes.
