@@ -9,6 +9,7 @@ repository = "https://github.com/0k/kal-mux"
 keywords = ["stream", "async", "merge", "multiplex", "ordered"]
 categories = ["asynchronous"]
 readme = "README.md"
+exclude = [".package.d/", "autogen.sh", ".gitchangelog.rc", ".gitignore", ".claude/", ".dovis/", "doc/"]
 
 [dependencies]
 futures = "0.3.31"
